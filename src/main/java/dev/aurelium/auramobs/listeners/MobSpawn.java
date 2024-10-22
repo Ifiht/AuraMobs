@@ -35,6 +35,7 @@ public class MobSpawn implements Listener {
     public void onSpawn(CreatureSpawnEvent e) {
         try {
             boolean valid = false;
+            boolean spawner = false;
             for (String s : plugin.optionList("spawn_reasons")) {
                 if (e.getSpawnReason().name().equalsIgnoreCase(s)) {
                     valid = true;
@@ -42,6 +43,9 @@ public class MobSpawn implements Listener {
                 }
             }
             if (!valid) return;
+            if (e.getSpawnReason() == CreatureSpawnEvent.SpawnReason.SPAWNER) {
+                spawner = true;
+            }
 
             if (plugin.isInvalidEntity(e.getEntity())) {
                 return;
@@ -76,9 +80,7 @@ public class MobSpawn implements Listener {
                 }
             }
 
-            int radius = plugin.optionInt("player_level.check_radius");
-
-            changeMob(entity, radius).runTask(plugin);
+            changeMob(entity, spawner).runTask(plugin);
         } catch (NullPointerException ex) {
             plugin.getLogger().severe(ex.getMessage());
         }
@@ -101,7 +103,7 @@ public class MobSpawn implements Listener {
         }
     }
 
-    public BukkitRunnable changeMob(LivingEntity entity, int radius) {
+    public BukkitRunnable changeMob(LivingEntity entity, boolean spawner) {
         return new BukkitRunnable() {
             @Override
             public void run() {
@@ -111,14 +113,6 @@ public class MobSpawn implements Listener {
                 int sumlevel = 0;
                 int maxlevel = Integer.MIN_VALUE;
                 int minlevel = Integer.MAX_VALUE;
-                List<Entity> players = entity.getNearbyEntities(radius, radius, radius).stream().filter(entity -> entity instanceof Player).toList();
-                for (Entity player : players) {
-                    if (player.hasMetadata("NPC")) continue;
-                    int lvl = plugin.getLevel((Player) player);
-                    sumlevel+=lvl;
-                    if (lvl>maxlevel) {maxlevel = lvl;}
-                    if (lvl<minlevel) {minlevel = lvl;}
-                }
                 Location mobloc = entity.getLocation();
                 Location spawnpoint = entity.getWorld().getSpawnLocation();
                 double distance = mobloc.distance(spawnpoint);
@@ -127,45 +121,27 @@ public class MobSpawn implements Listener {
                 int overrideLevel = getMetadataLevel(entity);
                 if (overrideLevel != 0) {
                     level = overrideLevel;
+                } else if (spawner) {
+                    level = 1;
                 } else {
-                    level = getCalculatedLevel(entity, players, distance, maxlevel, minlevel, sumlevel);
+                    level = getCalculatedLevel(entity, distance, maxlevel, minlevel, sumlevel);
                 }
                 new AureliumMob(entity, correctLevel(entity.getLocation(), level), plugin);
             }
         };
     }
 
-    private int getCalculatedLevel(LivingEntity entity, List<Entity> players, double distance, int maxlevel, int minlevel, int sumlevel) {
+    private int getCalculatedLevel(LivingEntity entity, double distance, int maxlevel, int minlevel, int sumlevel) {
         int level;
+        String pformula = "{sumlevel_global} / 1.5 + {distance} * 0.004 + {random_int}";
         String lformula;
         String prefix = plugin.isBossMob(entity) ? "bosses.level." : "mob_level.";
         int globalOnline = plugin.getServer().getOnlinePlayers().size();
-        if (players.isEmpty()) {
-            lformula = MessageUtils.setPlaceholders(null, plugin.optionString(prefix + "backup_formula")
-                    .replace("{distance}", Double.toString(distance))
-                    .replace("{sumlevel_global}", Integer.toString(plugin.getGlobalLevel()))
-                    .replace("{playercount}", globalOnline > 0 ? String.valueOf(globalOnline) : "1")
-                    .replace("{location_x}", Double.toString(entity.getLocation().getX()))
-                    .replace("{location_y}", Double.toString(entity.getLocation().getY()))
-                    .replace("{location_z}", Double.toString(entity.getLocation().getZ()))
-                    .replace("{random_int}", String.valueOf(random.nextInt(100) + 1))
-                    .replace("{random_double}", String.valueOf(random.nextDouble()))
-            );
-        } else {
-            lformula = MessageUtils.setPlaceholders(null, plugin.optionString(prefix + "formula")
-                    .replace("{highestlvl}", Integer.toString(maxlevel))
-                    .replace("{lowestlvl}", Integer.toString(minlevel))
-                    .replace("{sumlevel}", Integer.toString(sumlevel))
-                    .replace("{playercount}", Integer.toString(players.size()))
-                    .replace("{distance}", Double.toString(distance))
-                    .replace("{sumlevel_global}", Integer.toString(plugin.getGlobalLevel()))
-                    .replace("{location_x}", Double.toString(entity.getLocation().getX()))
-                    .replace("{location_y}", Double.toString(entity.getLocation().getY()))
-                    .replace("{location_z}", Double.toString(entity.getLocation().getZ()))
-                    .replace("{random_int}", String.valueOf(random.nextInt(100) + 1))
-                    .replace("{random_double}", String.valueOf(random.nextDouble()))
-            );
-        }
+        lformula = MessageUtils.setPlaceholders(null, pformula
+              .replace("{distance}", Double.toString(distance))
+              .replace("{sumlevel_global}", Integer.toString(plugin.getGlobalLevel()))
+              .replace("{random_int}", String.valueOf(random.nextInt(4)))
+        );
         level = (int) new ExpressionBuilder(lformula).build().evaluate();
         level = Math.min(level, plugin.optionInt(prefix + "max_level"));
         return level;

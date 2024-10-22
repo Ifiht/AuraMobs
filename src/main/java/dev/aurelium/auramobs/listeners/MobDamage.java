@@ -41,14 +41,12 @@ public class MobDamage implements Listener {
                     .replace("{mob}", plugin.getMsg("mobs." + entity.getType().name().toLowerCase(Locale.ROOT)))
                     .replace("{lvl}", Integer.toString(level))
                     .replace("{health}", formattedHealth)
-                    .replace("{maxhealth}", plugin.getFormatter().format(entity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue()))
             ));
         } catch (NullPointerException ex){
             entity.setCustomName(ColorUtils.colorMessage(plugin.optionString("custom_name.format")
                     .replace("{mob}", entity.getType().name())
                     .replace("{lvl}", Integer.toString(level))
                     .replace("{health}", formattedHealth)
-                    .replace("{maxhealth}", plugin.getFormatter().format(entity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue()))
             ));
         }
 

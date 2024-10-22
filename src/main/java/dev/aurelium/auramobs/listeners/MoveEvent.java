@@ -33,9 +33,7 @@ public class MoveEvent implements Listener {
                 .filter(mob -> mob instanceof LivingEntity && plugin.isAuraMob((LivingEntity) mob)).toList();
 
         to.forEach(mob -> {
-            if (!from.contains(mob)) {
-                mob.setCustomNameVisible(e.getPlayer().hasLineOfSight(mob));
-            }
+            mob.setCustomNameVisible(true);
         });
         from.forEach(mob -> {
             if (!to.contains(mob)) {

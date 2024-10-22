@@ -3,7 +3,8 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 plugins {
     `java-library`
     `maven-publish`
-    id("com.github.johnrengelman.shadow") version "7.1.2"
+    id("com.gradleup.shadow") version "8.3.3"
+    id("xyz.jpenilla.run-paper") version "2.3.1"
 }
 
 group = "dev.aurelium"
@@ -27,7 +28,7 @@ dependencies {
     }
     implementation("co.aikar:acf-paper:0.5.1-SNAPSHOT")
     implementation("org.bstats:bstats-bukkit:3.0.2")
-    compileOnly("dev.aurelium:auraskills-api-bukkit:2.2.0")
+    compileOnly("dev.aurelium:auraskills-api-bukkit:2.2.4")
     compileOnly("org.spigotmc:spigot-api:1.21-R0.1-SNAPSHOT")
     compileOnly("me.clip:placeholderapi:2.11.6")
     compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.7-SNAPSHOT")
@@ -47,7 +48,14 @@ tasks.withType<ShadowJar> {
     relocate("io.leangen.geantyref", "dev.aurelium.auramobs.geantyref")
 }
 
-java.sourceCompatibility = JavaVersion.VERSION_17
+java.sourceCompatibility = JavaVersion.VERSION_21
+java.targetCompatibility = JavaVersion.VERSION_21
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
 
 tasks {
     processResources {
@@ -66,13 +74,23 @@ tasks {
             (this as CoreJavadocOptions).addStringOption("Xdoclint:none", "-quiet")
         }
     }
+    runServer {
+        // Configure the Minecraft version for our task.
+        // This is the only required configuration besides applying the plugin.
+        // Your plugin's jar (or shadowJar if present) will be used automatically.
+        downloadPlugins {
+            // make sure to double check the version id on the Modrinth version page
+            modrinth("auraskills", "2.2.4")
+        }
+        minecraftVersion("1.21.1")
+    }
 }
 
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
     options.compilerArgs.add("-parameters")
     options.isFork = true
-    options.forkOptions.executable = "javac"
+    //options.forkOptions.executable = "javac"
 }
 
 publishing {
@@ -86,3 +104,4 @@ publishing {
         }
     }
 }
+
