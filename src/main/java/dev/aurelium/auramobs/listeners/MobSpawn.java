@@ -1,6 +1,7 @@
 package dev.aurelium.auramobs.listeners;
 
 import dev.aurelium.auramobs.AuraMobs;
+import dev.aurelium.auramobs.GlobalVars;
 import dev.aurelium.auramobs.api.WorldGuardHook;
 import dev.aurelium.auramobs.entities.AureliumMob;
 import dev.aurelium.auramobs.util.MessageUtils;
@@ -110,9 +111,7 @@ public class MobSpawn implements Listener {
                 if (entity.isDead() || !entity.isValid()) {
                     return;
                 }
-                int sumlevel = 0;
-                int maxlevel = Integer.MIN_VALUE;
-                int minlevel = Integer.MAX_VALUE;
+                int sumlevel = GlobalVars.globalLevel;
                 Location mobloc = entity.getLocation();
                 Location spawnpoint = entity.getWorld().getSpawnLocation();
                 double distance = mobloc.distance(spawnpoint);
@@ -124,26 +123,19 @@ public class MobSpawn implements Listener {
                 } else if (spawner) {
                     level = 1;
                 } else {
-                    level = getCalculatedLevel(entity, distance, maxlevel, minlevel, sumlevel);
+                    level = getCalculatedLevel(distance, sumlevel);
                 }
                 new AureliumMob(entity, correctLevel(entity.getLocation(), level), plugin);
+                //plugin.logInfo("Spawning new mob: " + entity.getName());
             }
         };
     }
 
-    private int getCalculatedLevel(LivingEntity entity, double distance, int maxlevel, int minlevel, int sumlevel) {
+    private int getCalculatedLevel(double distance, int sumlevel) {
         int level;
-        String pformula = "{sumlevel_global} / 1.5 + {distance} * 0.004 + {random_int}";
-        String lformula;
-        String prefix = plugin.isBossMob(entity) ? "bosses.level." : "mob_level.";
-        int globalOnline = plugin.getServer().getOnlinePlayers().size();
-        lformula = MessageUtils.setPlaceholders(null, pformula
-              .replace("{distance}", Double.toString(distance))
-              .replace("{sumlevel_global}", Integer.toString(plugin.getGlobalLevel()))
-              .replace("{random_int}", String.valueOf(random.nextInt(4)))
-        );
-        level = (int) new ExpressionBuilder(lformula).build().evaluate();
-        level = Math.min(level, plugin.optionInt(prefix + "max_level"));
+        int r = random.nextInt(4);
+        level = (int) ((sumlevel / 1.5) + (distance * 0.004) + r);
+        level = Math.min(level, 100);
         return level;
     }
 

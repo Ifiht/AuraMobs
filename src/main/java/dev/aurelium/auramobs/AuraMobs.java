@@ -163,10 +163,7 @@ public class AuraMobs extends JavaPlugin implements PolyglotProvider {
     }
 
     public int getAverageLevel(Player p) {
-        int enabled = getEnabledSkills().size();
-        if (enabled == 0) {
-            enabled = Skills.values().length;
-        }
+        int enabled = Skills.values().length;
         return getSumLevel(p) / enabled;
     }
 
@@ -174,28 +171,8 @@ public class AuraMobs extends JavaPlugin implements PolyglotProvider {
         return auraSkills.getGlobalRegistry().getSkills().stream().filter(Skill::isEnabled).toList();
     }
 
-    public int getGlobalLevel() {
-        return globalLevel;
-    }
-
-    public void setGlobalLevel(int globalLevel) {
-        this.globalLevel = globalLevel;
-    }
-
     public int getLevel(Player p) {
-        SkillsUser user = auraSkills.getUser(p.getUniqueId());
-        List<Skill> skills = getEnabledSkills();
-        String formula = optionString("player_level.formula")
-                .replace("{sumall}", Integer.toString(getSumLevel(p)))
-                .replace("{average}", Integer.toString(getAverageLevel(p)))
-                .replace("{skillcount}", Integer.toString(skills.size()));
-
-        for (Skill skill : skills) {
-            String replace = "{" + skill.name().toLowerCase(Locale.ROOT) + "}";
-            formula = formula.replace(replace, Integer.toString(user.getSkillLevel(skill)));
-        }
-
-        return (int) Math.round(new ExpressionBuilder(formula).build().evaluate());
+        return getAverageLevel(p);
     }
 
     public boolean isAuraMob(LivingEntity m) {
