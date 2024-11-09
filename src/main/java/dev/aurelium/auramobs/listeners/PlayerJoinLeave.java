@@ -19,10 +19,12 @@ public class PlayerJoinLeave implements Listener {
     @EventHandler(priority = EventPriority.LOWEST) // handle AuraSkills race condition...
     public void onJoin(PlayerJoinEvent event) {
         synchronized (GlobalVars.class) {
-            int playerLevel = plugin.getLevel(event.getPlayer());
-            GlobalVars.globalLevel += playerLevel;
-            plugin.logInfo("Player " + event.getPlayer().getName() + " joined, they are level " + playerLevel);
-            plugin.logInfo("New global level value: " + GlobalVars.globalLevel);
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                int playerLevel = plugin.getLevel(event.getPlayer());
+                GlobalVars.globalLevel += playerLevel;
+                plugin.logInfo("Player " + event.getPlayer().getName() + " joined, they are level " + playerLevel);
+                plugin.logInfo("New global level value: " + GlobalVars.globalLevel);
+                }, 5L); // handle AuraSkills race condition...
         }
     }
 
